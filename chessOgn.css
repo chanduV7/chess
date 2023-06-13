@@ -1,0 +1,19 @@
+*{
+    padding: 0;
+    margin: 0;
+    box-sizing: border-box;
+}
+
+body{
+    width:99vw;
+    height: 100vh;  
+}
+
+.root{
+    display: grid;
+    grid-template-columns: repeat(8,1fr);
+    max-width: 44.5rem;
+    margin: 0 auto;
+    border: 10px solid rgb(141, 78, 6);
+}
+
