@@ -27,16 +27,18 @@ const root = document.getElementById("root");
 
 const showMoves = () => {
     const code = event.target.parentElement.dataset.code;
-    console.log(code);
+   
     const obj = pieceArray.find((e) => e.code == code);
-    console.log(obj)
+   
     obj.calculateMoves();
-    console.log(obj)
-    const {moves} = obj;
-    moves.forEach((e) => {
-        console.log(e)
+   
+    const {validMoves} = obj;
+    validMoves.forEach((e) => {
         const box = document.querySelector(`[data-cords="${e.x},${e.y}"]`);
-        box.style.backgroundColor = "rgba(27,156,252,0.1)"
+        box.style.backgroundColor = "#90EE90"
+        if(e.capturable){
+            box.style.backgroundColor = "rgba(255,0,0,0.8)"
+        }
     }) 
 }
 
@@ -68,7 +70,7 @@ class Piece {
     displayPiece = () => {
         const box = document.querySelector(
             `[data-cords="${this.currPos.x},${this.currPos.y}"]`
-        )
+        );
             const img = document.createElement("img");
             img.setAttribute("src", this.img);
             box.setAttribute("data-code", this.code);
@@ -99,7 +101,7 @@ class Piece {
      };
 }
 const rx1 = new Piece("black Rook 1","rx1","black",{x:8,y:1},{x:8,y:1},"../media/b_rook.svg",[]);
-const kx1 = new Piece("black Knight 1","kx1","black",{x:8,y:2},{x:8,y:2},"../media/b_knight.svg",[]);
+const kx1 = new Piece("black Knight 1","kx1","black",{x:8,y:2},{x:5,y:4},"../media/b_knight.svg",[]);
 const bx1 = new Piece("black Bishop 1","bx1","black",{x:8,y:3},{x:8,y:3},"../media/b_bishop.svg",[]);
 const rx2 = new Piece("black Rook 2","rx2","black",{x:8,y:8},{x:8,y:8},"../media/b_rook.svg",[]);
 const kx2 = new Piece("black Knight 2","kx2","black",{x:8,y:7},{x:8,y:7},"../media/b_knight.svg",[]);
@@ -137,7 +139,7 @@ const p8 = new Piece("white Pawn 8","p8","white",{x:2,y:8},{x:2,y:8},"../media/w
 pieceArray = [rx1,kx1,bx1,rx2,kx2,bx2,kb,qb,r1,k1,b1,px1,px2,px3,px4,px5,px6,px7,px8,r2,k2,b2,k,q,p1,p2,p3,p4,p5,p6,p7,p8]
 pieceArray.forEach(e => e.displayPiece())
 
-calculateRookMoves = (obj) => {
+ const calculateRookMoves = (obj) => {
    obj.moves =[];
    let {currPos} = obj;
    for(let i = 1 ; i < 8 ; i++){
@@ -155,9 +157,72 @@ calculateRookMoves = (obj) => {
     }
     obj.moves.push({ x:currPos.x,y:newY})
    }
+   const directions = splitRookDirections(obj);
+   const newDir = sortDirections(directions, obj)
+//    console.log((newDir));
+   const filteredMoves = filterMoves(newDir, obj);
+//    console.log(filteredMoves);
+    obj.validMoves = filteredMoves
 }
 
-calculateBishopMoves = (obj) => {
+const splitRookDirections = (obj) => {
+    const {moves} = obj;
+    console.log(obj)
+    const up =[],
+          down = [],
+          right =[],
+          left = [];
+
+          for(const m of moves) {
+            if ( m.x < obj.currPos.x && m.y === obj.currPos.y) down.push(m);
+            if ( m.x > obj.currPos.x && m.y === obj.currPos.y) up.push(m);
+            if ( m.x === obj.currPos.x && m.y > obj.currPos.y) right.push(m);
+            if ( m.x === obj.currPos.x && m.y < obj.currPos.y) left.push(m);
+          }
+          return { up, down, right, left }
+};
+const sortDirections = (directions, obj) => {
+    const newDir = {};
+    for (const key in directions) {
+        console.log(key)
+        newDir[key] = directions[key].sort((a,b) => sortFunction(b, a, obj));
+       
+    }
+    console.log(newDir)
+    return newDir;
+}
+
+const sortFunction = (p1, p2, obj) => {
+    return distance(p2, obj.currPos) - distance(p1, obj.currPos)
+};
+const distance = (a,b) => {
+    return Math.sqrt(Math.pow(a.x - b.x,2) + Math.pow(a.y - b.y,2))
+};
+
+const filterMoves = (directions, obj) => {
+    let filteredMoves = [];
+    for (const key in directions){
+        for(const move of directions[key]) {
+            const box = document.querySelector(`[data-cords="${move.x},${move.y}"]`)
+            const boxPieceColor = box.dataset.color;
+            if(boxPieceColor) {
+                const {color} = obj;
+                if(color !== boxPieceColor){
+                    filteredMoves.push({
+                        ...move,
+                        capturable: true,
+                      });
+                }
+                if (box.dataset.code == "kw" || box.dataset.code == "kb") continue;
+                break;   
+            }
+            filteredMoves.push(move);  
+        }
+    }
+    return filteredMoves;
+}
+
+ const calculateBishopMoves = (obj) => {
     obj.moves=[];
     const {currPos} = obj;
     let move = 1;
@@ -193,10 +258,28 @@ calculateBishopMoves = (obj) => {
         move++
     }
    obj.moves = obj.moves.filter((e) => e.x > 0 && e.x < 9 && e.y > 0 && e.y < 9)
-   
+   const directions = splitBishopMoves(obj);
+   const newDir = sortDirections(directions,obj);
+   const filteredMoves = filterMoves(newDir,obj);
+   obj.validMoves = filteredMoves;
 }
 
-calculateKnightMoves = (obj) => {
+const splitBishopMoves = (obj) => {
+    const {moves, currPos} = obj;
+    const ur =[],
+          ul = [],
+          dr = [],
+          dl = []
+    moves.forEach((e) => {
+        if(currPos.x > e.x && currPos.y > e.y) dr.push(e);
+        if(currPos.x > e.x && currPos.y < e.y) dl.push(e);
+        if(currPos.x < e.x && currPos.y > e.y) ur.push(e);
+        if(currPos.x < e.x && currPos.y < e.y) ul.push(e);
+    })
+    return {ur, ul , dr, dl};
+}
+
+ const calculateKnightMoves = (obj) => {
     obj.moves = [];
     const {currPos} = obj;
     obj.moves.push({ x:currPos.x + 2 , y: currPos.y + 1});
@@ -207,9 +290,33 @@ calculateKnightMoves = (obj) => {
     obj.moves.push({ x:currPos.x + 1 , y: currPos.y - 2});
     obj.moves.push({ x:currPos.x - 1 , y: currPos.y + 2});
     obj.moves.push({ x:currPos.x - 1 , y: currPos.y - 2}); 
+    obj.validMoves = obj.moves.filter((e) => e.x > 0 && e.x < 9 && e.y>0 && e.y <9)
+   
+    obj.validMoves = kFilterMoves(obj);
+    console.log(obj)
 }
 
-calculateKingMoves = (obj) => {
+const kFilterMoves = (obj) => {
+    let filteredMoves = [];
+    for (const move of obj.moves) {
+      const box = document.querySelector(`[data-cords="${move.x},${move.y}"]`);
+      const boxPieceColor = box.dataset.color; // box.getAttribute("data-color");
+      if (boxPieceColor) {
+        const { color } = obj;
+        if (color !== boxPieceColor) {
+          filteredMoves.push({
+            ...move,
+            capturable: true,
+          });
+        }
+      } else {
+        filteredMoves.push(move);
+      }
+    }
+    return filteredMoves;
+  };
+
+ const calculateKingMoves = (obj) => {
       obj.moves = [];
       const {currPos} = obj;
       let moves = [];
@@ -225,7 +332,7 @@ calculateKingMoves = (obj) => {
     //   obj.moves = moves.map((e) => e)  
 }
 
-calculateQueenMoves = (obj) => {
+ const calculateQueenMoves = (obj) => {
     calculateBishopMoves(obj)
     const { currPos} = obj;
     for( let i = 1 ; i < 8 ; i++){
@@ -242,8 +349,32 @@ calculateQueenMoves = (obj) => {
        } 
        obj.moves.push({ x:currPos.x , y:newY}) 
     }
-   
+   const directions = splitQueenDirection(obj);
+   const newDir = sortDirections(directions, obj);
+   const filteredMoves = filterMoves(newDir, obj);
+   obj.validMoves = filteredMoves; 
 }
+
+const splitQueenDirection = (obj) => {
+    const {moves, currPos} = obj;
+    let up = [], dw = [], lr = [], rt = [],
+        ur = [], ul = [], dr = [], dl =[];
+    moves.forEach((e) => {
+        if(currPos.x > e.x && currPos.y < e.y) dl.push(e);
+        if(currPos.x > e.x && currPos.y > e.y) dr.push(e);
+        if(currPos.x < e.x && currPos.y > e.y) ur.push(e);
+        if(currPos.x < e.x && currPos.y < e.y) ul.push(e);
+        if(currPos.x > e.x && currPos.y === e.y) dw.push(e);
+        if(currPos.x < e.x && currPos.y === e.y) up.push(e);
+        if(currPos.x === e.x && currPos.y < e.y) rt.push(e);
+        if(currPos.x === e.x && currPos.y > e.y) lr.push(e);
+    })
+    return {up,dw,lr, rt, ur , ul, dr ,dl}
+}
+
+
+
+
 
 
 
