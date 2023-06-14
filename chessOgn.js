@@ -15,6 +15,7 @@ const root = document.getElementById("root");
             div.appendChild(para)
             div.setAttribute("data-cords",i+","+j)
             root.append(div);
+
             if((i+j)%2 == 0 ){
                 div.style.backgroundColor = "#F8EFBA";
             }else{
@@ -24,8 +25,36 @@ const root = document.getElementById("root");
     }
 })()
 
+const showMoves = () => {
+    const code = event.target.parentElement.dataset.code;
+    console.log(code);
+    const obj = pieceArray.find((e) => e.code == code);
+    console.log(obj)
+    obj.calculateMoves();
+    console.log(obj)
+    const {moves} = obj;
+    moves.forEach((e) => {
+        console.log(e)
+        const box = document.querySelector(`[data-cords="${e.x},${e.y}"]`);
+        box.style.backgroundColor = "rgba(27,156,252,0.1)"
+    }) 
+}
+
+const hideMoves = () => {
+    root.childNodes.forEach((e) => {
+        const i = e.dataset.cords.split(",")[0];
+        const j = e.dataset.cords.split(",")[1];
+        if((parseInt(i) + parseInt(j)) % 2){
+            e.style.backgroundColor = "#F8EFBA";
+        }
+        else{
+            e.style.backgroundColor="#EAB543"
+        }
+    })
+}
+
 class Piece {
-    constructor(name,color,code,initPos,currPos,img,moves){
+    constructor(name,code,color,initPos,currPos,img,moves){
         this.name = name;
         this.code = code;
         this.color = color;
@@ -33,6 +62,8 @@ class Piece {
         this.currPos = currPos;
         this.img = img;
         this.moves = moves;
+        this.validMoves = [];
+        this.numMoves = 0;
     }
     displayPiece = () => {
         const box = document.querySelector(
@@ -43,26 +74,29 @@ class Piece {
             box.setAttribute("data-code", this.code);
             box.setAttribute("data-color",this.color)
             img.style.maxWidth = "3rem";
-            box.appendChild(img)
+            box.appendChild(img);
+            img.addEventListener("mouseenter",showMoves);
+            img.addEventListener("mouseleave",hideMoves)        
     }
 
-    //   calculateMoves = () => {
-    //     let pieceName = this.name.split(" ")[1];
-    //     switch (pieceName){
-    //         // case "Pawn": calculatePawnMoves();
-    //         //              break;
-    //         case "Rook": calculateRookMoves(this);
-    //                      break;
-    //         // case "Knight" : calculateKnightMoves();
-    //         //                 break;
-    //         // case "Bishop" : calculateBishopMoves();
-    //         //                  break;
-    //         // case "King" : calculateKingMoves();
-    //         //               break;
-    //         // case "Queen" : calculateQueenMoves();
-    //         //                break;
-    //     }
-    //  };
+      calculateMoves = () => {
+        let pieceName = this.name.split(" ")[1];
+        console.log(pieceName)
+        switch (pieceName){
+            // case "Pawn": calculatePawnMoves();
+            //              break;
+            case "Rook": calculateRookMoves(this);
+                         break;
+            case "Knight" : calculateKnightMoves(this);
+                            break;
+            case "Bishop" : calculateBishopMoves(this);
+                             break;
+            case "King" : calculateKingMoves(this);
+                          break;
+            case "Queen" : calculateQueenMoves(this);
+                           break;
+        }
+     };
 }
 const rx1 = new Piece("black Rook 1","rx1","black",{x:8,y:1},{x:8,y:1},"../media/b_rook.svg",[]);
 const kx1 = new Piece("black Knight 1","kx1","black",{x:8,y:2},{x:8,y:2},"../media/b_knight.svg",[]);
@@ -70,8 +104,8 @@ const bx1 = new Piece("black Bishop 1","bx1","black",{x:8,y:3},{x:8,y:3},"../med
 const rx2 = new Piece("black Rook 2","rx2","black",{x:8,y:8},{x:8,y:8},"../media/b_rook.svg",[]);
 const kx2 = new Piece("black Knight 2","kx2","black",{x:8,y:7},{x:8,y:7},"../media/b_knight.svg",[]);
 const bx2 = new Piece("black Bishop 2","bx2","black",{x:8,y:6},{x:8,y:6},"../media/b_bishop.svg",[]);
-const kx = new Piece("black King","kx","black",{x:8,y:5},{x:5,y:5},"../media/b_king.svg",[]);
-const qx = new Piece("black Queen","qx","black",{x:8,y:4},{x:8,y:4},"../media/b_queen.svg",[]);
+const kb = new Piece("black King","kx","black",{x:8,y:5},{x:8,y:5},"../media/b_king.svg",[]);
+const qb = new Piece("black Queen","qx","black",{x:8,y:4},{x:8,y:4},"../media/b_queen.svg",[]);
 
 const px1 = new Piece("black Pawn 1","px1","black",{x:7,y:1},{x:7,y:1},"../media/b_pawn.svg",[])
 const px2 = new Piece("black Pawn 2","px2","black",{x:7,y:2},{x:7,y:2},"../media/b_pawn.svg",[])
@@ -100,7 +134,7 @@ const p6 = new Piece("white Pawn 6","p6","white",{x:2,y:6},{x:2,y:6},"../media/w
 const p7 = new Piece("white Pawn 7","p7","white",{x:2,y:7},{x:2,y:7},"../media/w_pawn.svg",[])
 const p8 = new Piece("white Pawn 8","p8","white",{x:2,y:8},{x:2,y:8},"../media/w_pawn.svg",[])
 
-pieceArray = [rx1,kx1,bx1,rx2,kx2,bx2,kx,qx,r1,k1,b1,px1,px2,px3,px4,px5,px6,px7,px8,r2,k2,b2,k,q,p1,p2,p3,p4,p5,p6,p7,p8]
+pieceArray = [rx1,kx1,bx1,rx2,kx2,bx2,kb,qb,r1,k1,b1,px1,px2,px3,px4,px5,px6,px7,px8,r2,k2,b2,k,q,p1,p2,p3,p4,p5,p6,p7,p8]
 pieceArray.forEach(e => e.displayPiece())
 
 calculateRookMoves = (obj) => {
@@ -178,7 +212,7 @@ calculateKnightMoves = (obj) => {
 calculateKingMoves = (obj) => {
       obj.moves = [];
       const {currPos} = obj;
-      let moves = []
+      let moves = [];
       moves.push({ x:currPos.x + 1 , y:currPos.y + 1})
       moves.push({ x:currPos.x - 1 , y:currPos.y - 1})
       moves.push({ x:currPos.x + 1 , y:currPos.y - 1})
@@ -187,20 +221,31 @@ calculateKingMoves = (obj) => {
       moves.push({ x:currPos.x , y:currPos.y - 1 })
       moves.push({ x:currPos.x + 1 , y:currPos.y })
       moves.push({ x:currPos.x - 1 , y:currPos.y })
-      moves.filter((e) => e.x > 0 && e.x < 9 && e.y < 0 && e.y < 9);
+      moves.filter((e) => e.x>0 && e.x < 9 && e.y >0 && e.y< 9)
+    //   obj.moves = moves.map((e) => e)  
 }
 
 calculateQueenMoves = (obj) => {
     calculateBishopMoves(obj)
     const { currPos} = obj;
-    for( let i = 1 ; i < 9 ; i++){
+    for( let i = 1 ; i < 8 ; i++){
         let newX = currPos.x + i;
         if(newX > 8 ) {
             newX = newX - 8;
         }
+        obj.moves.push({ x:newX, y: currPos.y})
     }
-
+    for (let i = 1; i < 8; i++) {
+       let newY = currPos.y + i;
+       if(newY > 8){
+         newY = newY - 8;
+       } 
+       obj.moves.push({ x:currPos.x , y:newY}) 
+    }
+   
 }
+
+
 
 
 
