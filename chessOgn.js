@@ -100,10 +100,10 @@ class Piece {
         }
      };
 }
-const rx1 = new Piece("black Rook 1","rx1","black",{x:8,y:1},{x:8,y:1},"../media/b_rook.svg",[]);
-const kx1 = new Piece("black Knight 1","kx1","black",{x:8,y:2},{x:5,y:4},"../media/b_knight.svg",[]);
+const rx1 = new Piece("black Rook 1","rx1","black",{x:8,y:1},{x:5,y:5},"../media/b_rook.svg",[]);
+const kx1 = new Piece("black Knight 1","kx1","black",{x:8,y:2},{x:8,y:2},"../media/b_knight.svg",[]);
 const bx1 = new Piece("black Bishop 1","bx1","black",{x:8,y:3},{x:8,y:3},"../media/b_bishop.svg",[]);
-const rx2 = new Piece("black Rook 2","rx2","black",{x:8,y:8},{x:8,y:8},"../media/b_rook.svg",[]);
+const rx2 = new Piece("black Rook 2","rx2","black",{x:8,y:8},{x:5,y:3},"../media/b_rook.svg",[]);
 const kx2 = new Piece("black Knight 2","kx2","black",{x:8,y:7},{x:8,y:7},"../media/b_knight.svg",[]);
 const bx2 = new Piece("black Bishop 2","bx2","black",{x:8,y:6},{x:8,y:6},"../media/b_bishop.svg",[]);
 const kb = new Piece("black King","kx","black",{x:8,y:5},{x:8,y:5},"../media/b_king.svg",[]);
@@ -158,6 +158,7 @@ pieceArray.forEach(e => e.displayPiece())
     obj.moves.push({ x:currPos.x,y:newY})
    }
    const directions = splitRookDirections(obj);
+   console.log(directions);
    const newDir = sortDirections(directions, obj)
 //    console.log((newDir));
    const filteredMoves = filterMoves(newDir, obj);
@@ -193,9 +194,11 @@ const sortDirections = (directions, obj) => {
 }
 
 const sortFunction = (p1, p2, obj) => {
+    console.log(distance(p2, obj.currPos) - distance(p1, obj.currPos));
     return distance(p2, obj.currPos) - distance(p1, obj.currPos)
 };
 const distance = (a,b) => {
+    console.log(Math.sqrt(Math.pow(a.x - b.x,2) + Math.pow(a.y - b.y,2)));
     return Math.sqrt(Math.pow(a.x - b.x,2) + Math.pow(a.y - b.y,2))
 };
 
@@ -300,7 +303,7 @@ const kFilterMoves = (obj) => {
     let filteredMoves = [];
     for (const move of obj.moves) {
       const box = document.querySelector(`[data-cords="${move.x},${move.y}"]`);
-      const boxPieceColor = box.dataset.color; // box.getAttribute("data-color");
+      const boxPieceColor = box.dataset.color; 
       if (boxPieceColor) {
         const { color } = obj;
         if (color !== boxPieceColor) {
@@ -315,23 +318,6 @@ const kFilterMoves = (obj) => {
     }
     return filteredMoves;
   };
-
- const calculateKingMoves = (obj) => {
-      obj.moves = [];
-      const {currPos} = obj;
-      let moves = [];
-      moves.push({ x:currPos.x + 1 , y:currPos.y + 1})
-      moves.push({ x:currPos.x - 1 , y:currPos.y - 1})
-      moves.push({ x:currPos.x + 1 , y:currPos.y - 1})
-      moves.push({ x:currPos.x - 1 , y:currPos.y + 1})
-      moves.push({ x:currPos.x , y:currPos.y + 1 })
-      moves.push({ x:currPos.x , y:currPos.y - 1 })
-      moves.push({ x:currPos.x + 1 , y:currPos.y })
-      moves.push({ x:currPos.x - 1 , y:currPos.y })
-      moves.filter((e) => e.x>0 && e.x < 9 && e.y >0 && e.y< 9)
-    //   obj.moves = moves.map((e) => e)  
-}
-
  const calculateQueenMoves = (obj) => {
     calculateBishopMoves(obj)
     const { currPos} = obj;
@@ -354,7 +340,6 @@ const kFilterMoves = (obj) => {
    const filteredMoves = filterMoves(newDir, obj);
    obj.validMoves = filteredMoves; 
 }
-
 const splitQueenDirection = (obj) => {
     const {moves, currPos} = obj;
     let up = [], dw = [], lr = [], rt = [],
@@ -370,6 +355,48 @@ const splitQueenDirection = (obj) => {
         if(currPos.x === e.x && currPos.y > e.y) lr.push(e);
     })
     return {up,dw,lr, rt, ur , ul, dr ,dl}
+}
+
+const calculateKingMoves = (obj) => {
+    obj.moves = [];
+    const {currPos} = obj;
+    let moves = [];
+    moves.push({ x:currPos.x + 1 , y:currPos.y + 1})
+    moves.push({ x:currPos.x - 1 , y:currPos.y - 1})
+    moves.push({ x:currPos.x + 1 , y:currPos.y - 1})
+    moves.push({ x:currPos.x - 1 , y:currPos.y + 1})
+    moves.push({ x:currPos.x , y:currPos.y + 1 })
+    moves.push({ x:currPos.x , y:currPos.y - 1 })
+    moves.push({ x:currPos.x + 1 , y:currPos.y })
+    moves.push({ x:currPos.x - 1 , y:currPos.y })
+   obj.moves =  moves.filter((e) => e.x>0 && e.x < 9 && e.y >0 && e.y< 9)
+   
+   obj.moves = findKingMoves(obj);
+    obj.validMoves = kFilterMoves(obj); 
+    console.log(obj);
+}
+
+const findKingMoves = (obj) => {
+    const {moves, color} = obj;
+    let oppPieceArr = pieceArray.filter((e) => e.color != color);
+    moves.forEach((e) => {
+        for ( const piece of oppPieceArr) {
+            let possibleCheck = [];
+            if(piece.name.includes("Pawn"))  {
+                possibleCheck = piece.validMoves.filter(
+                    (m) => m.x == e.x && m.y == e.y && m.capturable
+                );
+            }else {
+                possibleCheck = piece.validMoves.filter(
+                    (m) => m.x == e.x &&  m.y == e.y 
+                )
+            }
+            if(possibleCheck.length){
+                e.check =true
+            }
+        }
+    });
+   return moves;
 }
 
 
